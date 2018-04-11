@@ -148,7 +148,7 @@ STT_TYPE = {
 
 STB_BIND = {
 	0: 'LOCAL',
-	1: 'GLOBAL',
+    1: 'GLOBAL',
 	2: 'WEAK',
 	13: 'LOPROC',
 	15: 'HIPROC'
@@ -445,9 +445,9 @@ def readelf(elf, args):
 	if ei_data == 0:
 		print_err('Invalid data encoding')
 	elif ei_data == 1:
-		e_data = 'ELFDATA2LSB (little endian)'
+		e_data = 'little endian'
 	elif ei_data == 2:
-		e_data = 'ELFDATA2MSB (big endian)'
+		e_data = 'big endian'
 
 	ei_type  = struct.unpack('H', elf.read(2))[0]
 	if ei_type == 0:
@@ -481,40 +481,39 @@ def readelf(elf, args):
 		ei_entry = struct.unpack('I', elf.read(4))[0]
 		e_entry = ei_entry
 		e_phoff, e_shoff, e_flags, e_ehsize, e_phentsize, e_phnum, e_shentsize, e_shnum, e_shstrndx = struct.unpack('IIIHHHHHH', elf.read(24))
-	else:
+	else: # 64-bit
 		ei_entry = struct.unpack('Q', elf.read(8))[0]
 		e_entry = ei_entry
 		e_phoff, e_shoff, e_flags, e_ehsize, e_phentsize, e_phnum, e_shentsize, e_shnum, e_shstrndx = struct.unpack('QQIHHHHHH', elf.read(32))
 	if print_elf_header:
 		print("")
-		print("ELF Header (offset for 32/64-bit) ==========")
-		print("Identification (0x0-0x8):                       %02x %02x %02x %02x (Magic: \\x7ELF)" %(ei_mag0, ei_mag1, ei_mag2, ei_mag3))
-		print("                                                %02x %02x %02x %02x %02x" %(ei_class, ei_data, ei_version, ei_osabi, ei_abiversion))
-		print("Class (0x4):                                    0x%02x\t%s" %(ei_class, e_class))
-		print("Data (0x5):                                     0x%02x\t%s" %(ei_data, e_data))
-		print("Version (0x6, same as 0x14):                    0x%02x\t%s" %(ei_version, e_version))
-		print("ABI of target system (0x7):                     0x%02x\t%s" %(ei_osabi, e_osabi))
-		print("ABI Version (0x8), undefined for Linux:         0x%02x\t%s" %(ei_version, e_version))
-		print("Padding (0x9-0xf):                              all 0")
-		print("Type (0x10):                                    0x%02x\t%s" %(ei_type, e_type))
-		print("Machine (0x12):                                 0x%02x\t%s" %(ei_machine, e_machine))
-		print("Version (0x14, same as 0x6):                    0x%x\t%s" %(ei_version, e_version))
-		print("Entry point address (0x18):                     0x%x" %(e_entry));
-		print("Start of program headers (0x1c/0x20):           0x%x\t%d" % (e_phoff, e_phoff))
-		print("Start of section headers (0x20/0x28):           0x%x\t%d (bytes into file)" % (e_shoff, e_shoff))
-		print("Flags (0x24/0x30):                              0x%01x" % e_flags)
-		print("Size of this header (0x28/0x34):                0x%x\t%d (bytes)" % (e_ehsize, e_ehsize))
-		print("Size of program header (0x2a/0x36):             0x%x\t%d (bytes)" % (e_phentsize, e_phentsize))
-		print("Number of program headers (0x2c/0x38):          0x%x\t%d" % (e_shnum, e_shnum))
-		print("Size of section headers (0x2e/0x3a):            0x%x\t%d (bytes)" % (e_shentsize, e_shentsize))
-		print("Number of section headers (0x30/0x3c):          0x%x\t%d" % (e_shnum, e_shnum))
-		print("Index of section header table names(0x32/0x3e): 0x%x\t%d" % (e_shstrndx, e_shstrndx))
-
+		print("ELF Header (offset for %s) =====================" % ('32-bit' if ei_class == 1 else '64-bit'))
+		print("Identification (0x0-0x8):                        %02x %02x %02x %02x (Magic: \\x7ELF)" %(ei_mag0, ei_mag1, ei_mag2, ei_mag3))
+		print("                                                 %02x %02x %02x %02x %02x" %(ei_class, ei_data, ei_version, ei_osabi, ei_abiversion))
+		print("Class (0x4):                                     0x%02x\t%s" %(ei_class, e_class))
+		print("Data (0x5):                                      0x%02x\t%s" %(ei_data, e_data))
+		print("Version (0x6, same as 0x14):                     0x%02x\t%s" %(ei_version, e_version))
+		print("ABI of target system (0x7):                      0x%02x\t%s" %(ei_osabi, e_osabi))
+		print("ABI Version (0x8), undefined for Linux:          0x%02x\t%s" %(ei_version, e_version))
+		print("Padding (0x9):                                   00 00 00 00 00 00 00 (7 bytes)")
+		print("Type (0x10):                                     0x%02x\t%s" %(ei_type, e_type))
+		print("Machine (0x12):                                  0x%02x\t%s" %(ei_machine, e_machine))
+		print("Version (0x14, same as 0x6):                     0x%x\t%s" %(ei_version, e_version))
+		print("Entry point address (0x18):                      0x%x" %(e_entry));
+		print("Program headers offset (%s):                   0x%x\t%d (bytes into file)" % ('0x1c' if ei_class == 1 else '0x20', e_phoff, e_phoff))
+		print("Section headers offset (%s):                   0x%x\t%d (bytes into file)" % ('0x20' if ei_class == 1 else '0x28', e_shoff, e_shoff))
+		print("Flags (%s):                                    0x%01x" % ('0x24' if ei_class == 1 else '0x30', e_flags))
+		print("Size of this header (%s):                      0x%x\t%d (bytes)" % ('0x28' if ei_class == 1 else '0x34', e_ehsize, e_ehsize))
+		print("Size of program header (%s):                   0x%x\t%d (bytes)" % ('0x2a' if ei_class == 1 else '0x36', e_phentsize, e_phentsize))
+		print("Number of program headers (%s):                0x%x\t%d" % ('0x2c' if ei_class == 1 else '0x38', e_shnum, e_shnum))
+		print("Size of section headers (%s):                  0x%x\t%d (bytes)" % ('0x2e' if ei_class == 1 else '0x3a', e_shentsize, e_shentsize))
+		print("Number of section headers (%s):                0x%x\t%d" % ('0x30' if ei_class == 1 else '0x3c', e_shnum, e_shnum))
+		print("Index of section header table names (%s):      0x%x\t%d" % ('0x32' if ei_class == 1 else '0x3e', e_shstrndx, e_shstrndx))
 
 	elf.seek(e_shoff + e_shentsize * e_shstrndx)
 	if ei_class == 1: # 32-bit
 		sh_name, sh_type, sh_flags, sh_addr, sh_offset, sh_size, sh_link, sh_info, sh_addralign, sh_entsize  = struct.unpack('IIIHHIIIII', elf.read(48))
-	else:
+	else: # 64-bit
 		sh_name, sh_type, sh_flags, sh_addr, sh_offset,  sh_size, sh_link, sh_info, sh_addralign, sh_entsize  = struct.unpack('IIQQQQIIQQ', elf.read(64))
 
 	elf.seek(sh_offset)
@@ -528,7 +527,7 @@ def readelf(elf, args):
 			lastnull = i + 1
 	if print_ph:
 		print("")
-		print("Program Headers: ==========")
+		print("Program Headers: =====================")
 		print("%10s  0x%08s  0x%14s  0x%14s  0x%10s  0x%10s  %05s" %("Type", "Offset", "VirtAddr", "PhysAddr", "FileSiz", "MemSiz", "Flags"))
 
 	
@@ -554,13 +553,13 @@ def readelf(elf, args):
 		elf.seek(e_phoff + e_phentsize * e_shinterpndx)
 		if ei_class == 1: # 32-bit
 			p_type, p_offset, p_vaddr, p_paddr, p_filesz, p_memsz, p_flags, p_align = strcut.unpack('IIIIIIII', elf.read(32))
-		else:
+		else: # 64-bit
 			p_type, p_flags, p_offset, p_vaddr, p_paddr, p_filesz, p_memsz, p_align = struct.unpack('IIQQQQQQ', elf.read(56))
 		elf.seek(p_offset)
 		interp = elf.read(p_filesz)
 		if print_interp:
 			print("")
-			print("Interp (the dynamic loader): ==========")
+			print("Interp (the dynamic loader): =====================")
 			print(interp)
 
 	e_shsymndx = -1
@@ -571,14 +570,14 @@ def readelf(elf, args):
 
 	if print_sh:
 		print("")
-		print("Section Headers ==========")
+		print("Section Headers =====================")
 		print("[NR] %19s%15s%10s%10s%8s%8s%5s%5s%5s%6s" % ("Name", "Type", "Addr.", "Offset", "Size", "EntSize", "Flag", "Link", "Info", "Align"))
 	for i in range(0, e_shnum):
 		elf.seek(e_shoff + e_shentsize * i)
 
 		if ei_class == 1: # 32-bit
 			sh_name, sh_type, sh_flags, sh_addr, sh_offset, sh_size, sh_link, sh_info, sh_addralign, sh_entsize  = struct.unpack('IIIHHIIIII', elf.read(48))
-		else:
+		else: # 64-bit
 			sh_name, sh_type, sh_flags, sh_addr, sh_offset,  sh_size, sh_link, sh_info, sh_addralign, sh_entsize  = struct.unpack('IIQQQQIIQQ', elf.read(64))
 
 		f = ""
@@ -619,7 +618,7 @@ def readelf(elf, args):
 		elf.seek(e_shoff + e_shentsize * e_shdynstr)
 		if ei_class == 1: # 32-bit
 			sh_name, sh_type, sh_flags, sh_addr, sh_offset, sh_size, sh_link, sh_info, sh_addralign, sh_entsize  = struct.unpack('IIIHHIIIII', elf.read(48))
-		else:
+		else: # 64-bit
 			sh_name, sh_type, sh_flags, sh_addr, sh_offset,  sh_size, sh_link, sh_info, sh_addralign, sh_entsize  = struct.unpack('IIQQQQIIQQ', elf.read(64))
 
 		elf.seek(sh_offset)
@@ -635,7 +634,7 @@ def readelf(elf, args):
 
 		if ei_class == 1: # 32-bit
 			sh_name, sh_type, sh_flags, sh_addr, sh_offset, sh_size, sh_link, sh_info, sh_addralign, sh_entsize  = struct.unpack('IIIHHIIIII', elf.read(48))
-		else:
+		else: # 64-bit
 			sh_name, sh_type, sh_flags, sh_addr, sh_offset,  sh_size, sh_link, sh_info, sh_addralign, sh_entsize  = struct.unpack('IIQQQQIIQQ', elf.read(64))
 
 		elf.seek(sh_offset)
@@ -644,15 +643,15 @@ def readelf(elf, args):
 		if print_symbol_table:
 			print("")
 			if ei_class == 1: # 32-bit
-				print("Symbol Table '.dynsym' contains %d entries: ==========" % (sh_size / 16))
-			else:
-				print("Symbol Table '.dynsym' contains %d entries: ==========" % (sh_size / 24))
+				print("Symbol Table '.dynsym' contains %d entries: =====================" % (sh_size / 16))
+			else: # 64-bit
+				print("Symbol Table '.dynsym' contains %d entries: =====================" % (sh_size / 24))
 			print("%04s%10s%10s%10s%10s%10s%10s%30s" %("Num", "Value", "Size", "Type", "Bind", "Vis", "Ndx", "Name"))
 
 		for i in range(0, sh_size / 24):
 			if ei_class == 1: # 32-bit
 				st_name, st_info, st_other, st_shndx, st_value, st_size = struct.unpack('IIIBBH', dynsym_section[i*16:(i+1)*16])
-			else:
+			else: # 64-bit
 				st_name, st_info, st_other, st_shndx, st_value, st_size = struct.unpack('IBBHQQ', dynsym_section[i*24:(i+1)*24])
 
 			if st_name in dynsymbol_table:
@@ -669,7 +668,7 @@ def readelf(elf, args):
 		elf.seek(e_shoff + e_shentsize * e_shstrndx)
 		if ei_class == 1: # 32-bit
 			sh_name, sh_type, sh_flags, sh_addr, sh_offset, sh_size, sh_link, sh_info, sh_addralign, sh_entsize  = struct.unpack('IIIHHIIIII', elf.read(48))
-		else:
+		else: # 64-bit
 			sh_name, sh_type, sh_flags, sh_addr, sh_offset,  sh_size, sh_link, sh_info, sh_addralign, sh_entsize  = struct.unpack('IIQQQQIIQQ', elf.read(64))
 
 		elf.seek(sh_offset)
@@ -685,7 +684,7 @@ def readelf(elf, args):
 
 		if ei_class == 1: # 32-bit
 			sh_name, sh_type, sh_flags, sh_addr, sh_offset, sh_size, sh_link, sh_info, sh_addralign, sh_entsize  = struct.unpack('IIIHHIIIII', elf.read(48))
-		else:
+		else: # 64-bit
 			sh_name, sh_type, sh_flags, sh_addr, sh_offset,  sh_size, sh_link, sh_info, sh_addralign, sh_entsize  = struct.unpack('IIQQQQIIQQ', elf.read(64))
 
 		elf.seek(sh_offset)
@@ -694,9 +693,9 @@ def readelf(elf, args):
 	if print_symbol_table:
 		print("")
 		if ei_class == 1: # 32-bit
-			print("Symbol Table '.symtab' contains %d entries: ==========" % (sh_size / 16))
-		else:
-			print("Symbol Table '.symtab' contains %d entries: ==========" % (sh_size / 24))
+			print("Symbol Table '.symtab' contains %d entries: =====================" % (sh_size / 16))
+		else: # 64-bit
+			print("Symbol Table '.symtab' contains %d entries: =====================" % (sh_size / 24))
 		print("%04s%10s%10s%10s%10s%10s%10s%30s" %("Num", "Value", "Size", "Type", "Bind", "Vis", "Ndx", "Name"))
 
 		for i in range(0, sh_size / 24):
@@ -718,18 +717,18 @@ def readelf(elf, args):
 		elf.seek(e_shoff + e_shentsize * e_shdynamic)
 		if ei_class == 1: # 32-bit
 			sh_name, sh_type, sh_flags, sh_addr, sh_offset, sh_size, sh_link, sh_info, sh_addralign, sh_entsize  = struct.unpack('IIIHHIIIII', elf.read(48))
-		else:
+		else: # 64-bit
 			sh_name, sh_type, sh_flags, sh_addr, sh_offset,  sh_size, sh_link, sh_info, sh_addralign, sh_entsize  = struct.unpack('IIQQQQIIQQ', elf.read(64))
 
 		elf.seek(sh_offset)
 		dynamic_section = elf.read(sh_size)	
 		if print_dynamic_section:
 			print('')
-			print('Dynamic Section ==========')
+			print("Dynamic Section =====================")
 			print('%20s %20s %20s' %("Tag", "Type", "Name/Value"))
 		if ei_class == 1: # 32-bit
 			pass
-		else:
+		else: # 64-bit
 			for i in range(0, sh_size/16):
 				elf.seek(sh_offset + i * 16)		
 				d_tag, d_un = struct.unpack('QQ', elf.read(16))
@@ -753,8 +752,7 @@ def readelf(elf, args):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
-	parser.add_argument('-v', '--version', action='store_true', help='version info')
-	parser.add_argument('file', metavar='file', type=str, help='path to the ELF file')
+	parser.add_argument('-v', '--version', action='version', version="Interpret an ELF file, version 0.2. Copyright (C) detailyang and Leedehai", help='print version info and exit')
 	parser.add_argument('-eh', '--elf-header', action='store_true', help='print ELF header')
 	parser.add_argument('-ph', '--program-header', action='store_true', help='print program headers')
 	parser.add_argument('-sh', '--section-header', action='store_true', help='print section headers')
@@ -762,12 +760,9 @@ if __name__ == '__main__':
 	parser.add_argument('-st', '--symbol-table', action='store_true', help='print symbol table')
 	parser.add_argument('-ds', '--dynamic-section', action='store_true', help='print dynamic section')
 	parser.add_argument('-a', '--all', action='store_true', help='print all (default)')
+	parser.add_argument('file', type=str, help='path to the ELF file')
 	
 	args = parser.parse_args()
-	
-	if args.version:
-		print("Python tool to read ELF format\nCopyright (C) detailyang and Leedehai")
-		sys.exit(0)
 
 	if args.elf_header is False and args.program_header is False \
 		and args.section_header is False and args.interp is False \
